@@ -1,36 +1,32 @@
-# WELCOME
+# Hello
 
-This is a link to the repository of team GenX. It contains the work of a group of STAT 540 students on a project titled **Differential methylation analysis of preeclamptic placental tissue using the Illumina HumanMethylation450K array** [click here to check out our poster on it :)](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Documents/GenX_poster.pdf)
+I am Abdullah Farouk, a new master's student with the department of Statistics at UBC. I have an undergraduate degree in Economics and Finance from McGill University. If you would like to learn more about me [please click here](https://www.linkedin.com/in/abdullah-farouk-a81a237a/)
 
-# Project Goals, Challenges and Findings
+### Goals in this course
+In this course on High Dimensional Biology (Stat 540) I hope to learn about how bioinformaticians use statistical methods to support causal claims in their research. I hope this will provide me with a new way of thinking about research problems that are of interest to me. 
 
-The links below will provide readers with a description of our aims, our initial hurdles and our key findings on this topic.
+### REPO Contents
+You can learn more about the work I have done in this course throughout the semester by referring to the table below. Its provides a brief description of the contents of this repository as follows: 
 
-[Project Proposal](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Documents/Proposal.md)
-
-[Progress Report](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Documents/Progress_Report.md)
-
-[Technical Report](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Documents/Technical_Report.md)
-
-
-# Work Flow Diagram
-
-The flowchart below provides a summary of the different analyses carried out in our project. The black arrow corresponds to the sequence in which they were undertaken. The coloured arrows show which script was used in each part;
-
-
-
-
-![Flowchart](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Untitled%20Diagram.png)
-
-
-# REPO Contents
-This repository contains three folders. They are:
 
 Folder Name | Description | Link
 :------------ | :------------------------ | :----------------------------------:
-Code | This folder is our codebase. It contains the different rmd scripts (with detailed comments) used to perform our analysis and generate our findings. | [Click here](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Code/README.md)
-Data | This folder holds data sets and data objects used throughout our analysis. It's contents allows readers to reproduce our work. <br/><br/> It does not contain all the datasets used in our analysis (very large files; over 200MB), though extensive mention of them is made in our [pre processing script](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Code/pre_processing_data.md) and our [test creation script](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Code/test_data_set_creation.md) | [Click here](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Data/README.md)
-Documents | This folder contains documents which explain our aims, challenges and findings in an easy to understand manner. | [Click here](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Documents/README.md)
+Assignments | This folder contains my assignments for the semester. | [Click here](https://github.com/STAT540-UBC/zz_farouk-abdullah_STAT540_2018/tree/master/Assignments)
+Paper Review | This folder contains my concise review of the paper on 'Gene Expression By Mouse Inner Ear Cells during Development' | [Click here](https://github.com/STAT540-UBC/zz_farouk-abdullah_STAT540_2018/blob/master/Paper%20Review/Paper_Review.md)
+Project | This folder contains a link to my [induvidual report](https://github.com/STAT540-UBC/zz_farouk-abdullah_STAT540_2018/blob/master/Project/Abdullah_Farouk_report.md) and my team's (Gen-X) project [README](https://github.com/STAT540-UBC/zz_farouk-abdullah_STAT540_2018/blob/master/Project/README.md). | [Click here](https://github.com/STAT540-UBC/zz_farouk-abdullah_STAT540_2018/tree/master/Project)
+Seminars | This folder contains my deliverables for each of the 10 seminars conducted throughout the semester. | [Click here](https://github.com/STAT540-UBC/zz_farouk-abdullah_STAT540_2018/tree/master/Seminars)
 
 
 
+# BONUS MATERIAL
+
+### Fun facts about me
+- I enjoy watching *cricket*
+- My sisters think I am wierd.
+
+## AND
+I ~~enjoy~~ ocassionally *getting* roasted by my friends.
+
+![](http://www.reactiongifs.com/r/O0oo0.gif)
+
+Indeed!
