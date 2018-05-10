@@ -1,0 +1,20 @@
+---
+title: "Seminars"
+author: "Abdullah Farouk"
+date: '2018-01-17'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Reproducing graph (Seminar 2b)
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+ggplot(data = mpg) + 
+geom_point(mapping = aes(x = displ, y = hwy, color = drv, size = class)) + scale_color_brewer(palette="Dark2")
+```

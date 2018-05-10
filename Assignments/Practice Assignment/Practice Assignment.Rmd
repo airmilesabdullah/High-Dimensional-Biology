@@ -1,0 +1,141 @@
+---
+title: "Stat 540 Practice Assignment"
+author: "Abdullah Farouk"
+date: '2018-01-14'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Practice Assignment
+
+##Exploring Titanic Dataset
+
+To begin lets load some libraries we will need to do some analysis. In addition the filepath to the text file used later on is also included in this chunk of code. 
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+setwd('/Users/abdullah/Desktop/Stat 540/Practice Assignment') #tooth growth dataset file path  
+titanic <- Titanic
+titanic <- data.frame(titanic) #Converting data into a data frame
+
+```
+
+Now lets take a closer look at passenger composition on board the titanic. We are interested in two questions. They are:
+
+1. How many children and adults were on Titanic?
+```{r}
+children <- filter(titanic, Age == 'Child')
+child <- sum(children$Freq) #109 children
+
+adults <- filter(titanic, Age == 'Adult')
+adult <- sum(adults$Freq) #2092 adults
+```
+There were `r child` children and `r adult` adults on board the Titanic. 
+
+
+2. Were there more female adult or male adult passengers?
+```{r}
+female <- filter(adults, Sex == 'Female')
+sum(female$Freq) # There were 425 female passengers
+male <- filter(adults, Sex == 'Male')
+sum(male$Freq) # There were 1667 male passengers
+diff <- sum(male$Freq) - sum(female$Freq)
+```
+There were `r diff` more male passengers on board the Titanic than there were female passengers.
+
+
+Lets now take a look at survival rates. Did children or adults have a higher rate of survival? 
+To answer this question we look at the proportion of children (adults) who survived as a proportion of the total number of children (adults) on board.
+```{r}
+#Lets take a look at children who survived
+children_who_survived <- filter(children, Survived == "Yes")
+child_survival_rate <- sum(children_who_survived$Freq)/sum(children$Freq) # 52% of all children on board survived
+
+#Lets take a look at adults who survived
+adults_who_survived <- filter(adults, Survived == "Yes") 
+adult_survival_rate <- sum(adults_who_survived$Freq)/sum(adults$Freq) # 31% of all adults on board survived
+
+
+```
+It seems that `r child_survival_rate` of all children on board survived whilst only `r adult_survival_rate` of all adults survived. Thus it looks like children had a higher within group survival rate relative to their adult counterparts. 
+
+
+Here I briefly explore survival rate variation across class and sex across groups of adults and children on the Titanic.
+```{r}
+#children
+children_who_survived <- mutate(children_who_survived, rate = round(Freq/sum(children$Freq), 2)) #Use the round function so rates are calculated upto 2 decimal places
+
+#Adults
+adults_who_survived <- mutate(adults_who_survived, rate = round(Freq/sum(adults$Freq), 2)) #Use the round function so rates are calculated upto 2 decimal places 
+
+children_who_survived
+adults_who_survived
+```
+
+Irrespective of sex, children in the 2nd and the 3rd classes had the highest rates of survival.The adults survival rate table shows some interesting trends. First, more adult women survived relative to their male counterpart. Second, it seems like male crew members and female first class passengers had the highest rates of survival. 
+
+ 
+Now lets take a look at whether passenger class had an effect on survival rates. 
+```{r}
+class <- group_by(titanic, Class)
+class_1 <- filter(titanic, Class == '1st')
+number_of_passengers_1 <- sum(class_1$Freq) #Number of 1st class passengers
+survivors_1 <- filter(class_1, Survived == 'Yes')
+survivors_1 <- sum(survivors_1$Freq)/number_of_passengers_1 #62%
+
+#2nd Class Passengers
+class_2 <- filter(titanic, Class == '2nd')
+number_of_passengers_2 <- sum(class_2$Freq) #Number of 2nd class passengers
+survivors_2 <- filter(class_2, Survived == 'Yes')
+survivors_2 <- sum(survivors_2$Freq)/number_of_passengers_2 #41%
+
+#3rd Class Passengers
+class_3 <- filter(titanic, Class == '3rd')
+number_of_passengers_3 <- sum(class_3$Freq) #Number of 3rd class passengers
+survivors_3 <- filter(class_3, Survived == 'Yes')
+survivors_3 <- sum(survivors_3$Freq)/number_of_passengers_3 #25%
+
+#Crew Class Passengers
+class_crew <- filter(titanic, Class == 'Crew')
+number_of_passengers_crew <- sum(class_crew$Freq) #Number of 3rd class passengers
+survivors_crew <- filter(class_crew, Survived == 'Yes')
+survivors_crew <- sum(survivors_crew$Freq)/number_of_passengers_crew #24%
+
+#Tabulate results
+
+survival_rate_table <- rbind(survivors_1, survivors_2, survivors_3, survivors_crew)
+survival_rate_table
+
+```
+1st class passengers have the highest rates of survival, followed by 2nd class passengers, the crew members and then the 3rd class passengers. 
+
+
+##Data Visualization
+
+
+This exercise uses data on tooth growth cells in 60 guinea pigs. It captures the length of growth in repsonse to daily dosage of vitamin C across two different methods of delivery. The aim of it is to visually represent meaningul patterns in the dataset.
+```{r}
+?ToothGrowth #Learn about the variables in the dataset
+tooth_growth <- data.frame(read.table(" guinea_pig_tooth_growth.txt", header = TRUE)) #Reading data in
+str(tooth_growth) #inspecting to see if data was read in correctly
+
+#Plotting
+ggplot(tooth_growth, aes(x=dose, y=len, fill=supp)) +
+geom_bar(stat='identity', position='dodge') + 
+labs(x = "Dose", y = "Length", title = "Tooth Growth in Guinea Pigs", fill = "Delivery Method") +
+theme(plot.title = element_text(family = "Trebuchet MS", color="#666666", face="bold", size=24, hjust=0.5, vjust = 1)) #Adjust the font size and positon of the graph title.
+```
+The bar chart displayed above is useful for a variety of reasons. First, it displays all the information in the dataset. Second, vertical bars make it very easy to visualize differences in growth across the different groups.
+
+The x axis is the daily dosage of vitamin C a pig recieved. The y axis represents the increase in cell length. Red bars represent pigs who recieved vitamin C through orange juice whilst green bars represent those who recieved it through ascorbic acid. 
+
+The graph reveals a positive correlation between cell legnth increase and daily dosage sizes. An interesting obesrvation is that pigs that recieved vitamin C through orange juice experienced higher length increases if the daily dosage was less than or equal to 1, whilst the converse held true for those that recieved a daily dosage larger than 1. 
+
+These are some of the finds from playing around with the Titanic and tooth growth dataset. Please feel free to reach out for any clarification on the analysis undertaken in this assignment.
+
+

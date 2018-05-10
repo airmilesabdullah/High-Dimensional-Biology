@@ -1,0 +1,71 @@
+---
+title: "Seminar 10"
+author: "Abdullah Farouk"
+date: '2018-03-25'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Load libraries
+```{r}
+
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ermineR)
+library(reshape2)
+
+```
+
+
+ErmineJ
+```{r}
+#Get Data
+(geneList <- read_csv("ranked_gene_list.csv"))
+
+(mfScores <- read_csv("gene_multifunctionality_scores.csv"))
+
+# download the latest GO.xml file if it doesn't already exist
+if (!file.exists("GO.xml")) { goToday("GO.xml") }
+
+ermineInputGeneScores <- geneList %>% 
+  mutate(absolute_logFC = abs(logFC)) %>% 
+  select(gene, absolute_logFC) %>% 
+  na.omit() %>% 
+  as.data.frame() %>% 
+  arrange(desc(absolute_logFC)) %>% 
+  column_to_rownames("gene")
+
+head(ermineInputGeneScores) # print the first few rows
+
+enrichmentResult <- precRecall(scores = ermineInputGeneScores, 
+                               scoreColumn = 1, # column 1 is the scores 
+                               bigIsBetter = TRUE, # larger logFC should be ranked higher
+                               annotation = "Generic_human", # ask ermineJ to use the Generic_human annotation file (will automatically download)
+                               aspects = "B", # look at only biological processes 
+                               iterations = 10000, # 10K sampling iterations so that results are stable
+                               geneSetDescription = "GO.xml") # use the GO XML file in current directory
+
+#Now, let's take a look at output$result, which's probably what you care about the most
+enrichmentResult$results %>% arrange(MFPvalue)
+
+```
+
+
+
+Show the TA your list of top 10 GO terms that experience the largest adjustments to get checked off. And good day!
+```{r}
+enrichmentResult$results %>% 
+  select(Name, Pval, MFPvalue) %>% 
+  mutate(neg_log_pvalue = -log10(Pval),
+         neg_log_mfpvalue = -log10(MFPvalue)) %>% 
+  mutate(log_pvalue_change = neg_log_mfpvalue - neg_log_pvalue) %>% 
+  arrange(desc(abs(log_pvalue_change))) %>% 
+  head(10) %>% 
+  knitr::kable()
+```
+

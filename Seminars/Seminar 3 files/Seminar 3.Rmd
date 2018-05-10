@@ -1,0 +1,126 @@
+---
+title: "Seminar 3"
+author: "Abdullah Farouk"
+date: '2018-01-24'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning = FALSE, message = FALSE}
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("GEOquery","biomaRt") 
+library(GEOquery)
+library(biomaRt)
+#install.packages("tidyverse")
+library(tidyverse)
+#install.packages("data.table")
+library(data.table)
+#install.packages("reshape2")
+library(reshape2)
+library(dplyr)
+library(ggplot2)
+```
+
+
+```{r}
+gds <- getGEO("GDS507")
+
+#we can use str() to peak at the structure of a data object. 
+#str(gds)
+
+meta_data <- data.frame(Sample = gds@dataTable@columns$sample, disease = gds@dataTable@columns$disease.state)
+#we grab this info from the appropriate slots above. 
+
+data_0 <- gds@dataTable@table
+head(data_0)
+
+#We exclude the first and second columns because they hold the probe and gene names, respectively.
+apply(data_0[,-c(1, 2)], 2, median)
+
+# Use spread and gather functions
+melted_data <- melt(data_0, id.vars = c("ID_REF", "IDENTIFIER"), var = "Sample")
+head(melted_data)
+
+#calculate the mean gene expression per sample
+melted_data %>% 
+    group_by(Sample) %>% 
+    summarize(mean = mean(value))
+
+new_melted_data <- melted_data %>% 
+    group_by(Sample, IDENTIFIER) %>% 
+    summarize(Count = mean(value))
+
+```
+
+The biomaRt package is very useful in this regard. It accesses the ensembl database of gene names and annotations (ensembl.org). biomaRt can help us convert ensemble ids (eg. ENSGXXXXX) into HGNC symbols (i.e BRCA1), for example, along with a host of other things.
+
+Say we want to learn more about the gene expression on a particular chromosome, across all samples. We can use biomaRt to look up the chromosomal location of each gene. Read the biomaRt manual for more detailed explanation of the following bit of code.
+
+```{r}
+#open connection between biomaRt and R. 
+# human = useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+# #function that takes in data frame, and outputs same data frame with associated chromosome annotations.
+# identify_gene_names <- function(df){
+#      names(df) <- c("Sample", "hgnc_symbol", "Count")
+#      names <- getBM( attributes=c("hgnc_symbol", "chromosome_name") , filters= "hgnc_symbol", values = df$hgnc_symbol, mart = human)
+#      left_join(df, names, by = "hgnc_symbol")
+#  }
+data <- read.csv('biomart_output.csv', header = TRUE)
+head(data)
+#There's a lot of variation in how the chromosomal location is annotated. To simplify things, let's filter out all genes with annotations that are not numeric numbers between 1 and 23, X or Y. 
+data_with_chromosome <- data %>% 
+    filter(chromosome_name %in% c(1:23, "X", "Y"))
+head(data_with_chromosome)
+```
+
+
+Let's say we're interested in how the average expression of genes on the X chromosome changes between RCC and normal cells.
+
+The first thing we will do is combine information from the meta data file (meta_data) with our expression table (data_with_chromosome). Then we will use dplyr verbs to first group all samples by disease status, filter out all non-X-chromosome genes, and then calcualte the mean using summarize().
+
+```{r}
+full_data <- left_join(data_with_chromosome, meta_data, by = "Sample")
+full_data %>% 
+    group_by(disease) %>% 
+    filter(chromosome_name == "X") %>% 
+    summarize(mean = mean(Count))
+```
+
+Being able to graph these results is useful, but what we really want to do run statistical tests on the data. There are a variety of ways to do that which will be explored in subsequent lectures. But in this seminar we will focus on doing this using dplyr.
+
+In this case, we want to identify the genes that are differentially expressed between the normal and RCC samples. We will use summarize() to perform a t-test for each gene.
+
+#Deliverable 
+
+```{r}
+data_1 <- full_data %>% 
+    group_by(hgnc_symbol) %>% 
+    summarize( pvalue = t.test(Count ~ disease)$p.value)
+```
+
+1) Make a density plot using geom_density() of the p-value distributions of the above t-test
+
+```{r}
+ggplot(data_1, aes(x=pvalue)) + geom_density(col = 'Red')
+
+```
+
+2) Also, extract a data frame of all genes with p-values lower than 0.05. Finally, extract the name of the gene with the lowest p-value.
+
+```{r}
+#Create a data frame with p values less than 0.05
+data_2 <- filter(data_1, pvalue < 0.05)
+
+#Get name of gene with lowest pvalue
+lowest_p_value <- min(data_2$pvalue)
+gene_name <- filter(data_2, pvalue == lowest_p_value)
+gene_name <- select(gene_name, hgnc_symbol)
+gene_name
+
+#Alternative
+data_1[which.min(data_1$pvalue),]
+```
+

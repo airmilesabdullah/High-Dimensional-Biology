@@ -1,0 +1,165 @@
+---
+title: "Seminar06"
+author: "Abdullah Farouk"
+date: '2018-02-14'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+#Load packages
+
+library(RColorBrewer)
+library(cluster)
+library(pvclust)
+library(xtable)
+library(limma)
+library(plyr)
+library(lattice)
+library(RCurl)
+options('download.file.method'='curl')
+library(GEOquery)
+library(knitr)
+library(pheatmap)
+library(ggdendro)
+library(tidyr)
+library(tidyverse)
+library(ggplot2)
+library("grid")
+library(dendextend)
+library(plotly)
+```
+
+Read the data into R
+
+```{r}
+
+options('download.file.method'='curl')
+if(file.exists("GSE70213.Rdata")){ # if previously downloaded
+  load("GSE70213.Rdata")
+} else { 
+#Get geo object that contains our data and phenotype information  
+geo_obj <- getGEO("GSE70213", GSEMatrix = TRUE)
+geo_obj <- geo_obj[[1]]
+save(geo_obj, file = "GSE70213.Rdata")
+}
+#Get expression data  
+data <- exprs(geo_obj)
+
+#Get covariate data  
+prDes <- pData(geo_obj)[,c("organism_ch1","title",colnames(pData(geo_obj))[grep("characteristics", colnames(pData(geo_obj)))])]
+
+##Clean up covariate data  
+colnames(prDes) = c("organism","sample_name","tissue","genotype","sex","age")
+prDes$tissue = as.factor(gsub("tissue: ","", prDes$tissue))
+prDes$genotype = as.factor(gsub("genotype: ","", prDes$genotype))
+prDes$sex = as.factor(gsub("Sex: ","", prDes$sex))
+prDes$age = gsub("age: ","", prDes$age)
+
+```
+
+
+Clustering
+
+```{r}
+#Heirarchical Clustering
+
+#Round data
+sprDat <- t(scale(t(data)))
+data_to_plot_0 <- sprDat
+data_to_plot <- as.data.frame(sprDat)
+data_to_plot$site <- rownames(sprDat) #Add gene site information
+data_to_plot_1 <- gather(data_to_plot, key = variable, value = expression, -site) #Long format
+
+# compute pairwise distances
+pr.dis <- dist(t(data_to_plot_0), method = "euclidean")
+
+# create a new factor representing the interaction of tissue type and genotype
+prDes$grp <- with(prDes, interaction(tissue, genotype))
+
+#Initial Plots
+pr.hc.s <- hclust(pr.dis, method = "single")
+pr.hc.c <- hclust(pr.dis, method = "complete")
+pr.hc.a <- hclust(pr.dis, method = "average")
+pr.hc.w <- hclust(pr.dis, method = "ward.D")
+
+# plot them
+{ggdendrogram(pr.hc.s, labels = FALSE, main = "Single", xlab = "")
+ggdendrogram(pr.hc.c, labels = FALSE, main = "Complete", xlab = "")
+ggdendrogram(pr.hc.a, labels = FALSE, main = "Average", xlab = "")
+ggdendrogram(pr.hc.w, labels = FALSE, main = "Ward", xlab = "")}
+
+#Using ggplot to create Dendograms and heatmaps
+pr.hc.s <- as.dendrogram(hclust(pr.dis, method = "average"))
+k_3 <- cutree(pr.hc.s, k = 24, order_clusters_as_data = FALSE) 
+# The FALSE above makes sure we get the clusters in the order of the dendrogram
+the_bars <- cbind(prDes$grp, k_3)
+dendro.plot <- pr.hc.s %>% set("labels", prDes$grp)
+{dendro.plot %>% plot
+  colored_bars(colors = the_bars, dend = pr.hc.s)}  
+
+#Plot a heatmap of the dendogram
+heatmap.plot <- ggplot(data_to_plot_1, aes(variable, site)) + 
+  geom_tile(aes(fill = expression)) + #specify quantitative variable to fill over
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  theme(legend.position = "none",
+        axis.ticks = element_blank(), 
+        axis.text.x = element_text(angle = 330, hjust = 0), axis.text.y = element_blank())
+
+# All together
+{grid.newpage()
+print(heatmap.plot, vp = viewport(x = 0.4, y = 0.5, width = 0.8, height = 1.0))
+print(dendro.plot, vp = viewport(x = 0.90, y = 0.43, width = 0.2, height = 0.92))}
+
+#Plot dendogram of 10 genes
+# identify 10 clusters
+pr.hc.w <- as.dendrogram(hclust(pr.dis, method = "ward.D2"))
+{pr.hc.w  %>% set("labels", prDes$grp) %>% plot
+pr.hc.w %>% rect.dendrogram(k = 10)}
+
+```
+
+Agglomerative Hierarchical Clustering of Top Genes
+
+```{r}
+cutoff <- 1e-05
+DesMat <- model.matrix(~grp, prDes)
+dsFit <- lmFit(sprDat, DesMat)
+dsEbFit <- eBayes(dsFit)
+dsHits <- topTable(dsEbFit, coef = grep("grp", colnames(coef(dsEbFit))), p.value = cutoff, 
+    n = Inf)
+numBHhits <- nrow(dsHits)
+
+topGenes <- rownames(dsHits)
+
+# Scaled data of topGenes
+topDat <- sprDat[topGenes, ]
+
+#Heatmap
+pheatmap(topDat, cluster_rows = TRUE, scale = "none", clustering_method = "mcquitty", 
+    clustering_distance_cols = "correlation", clustering_distance_rows = "euclidean", 
+    annotation = prDes[, c("tissue", "genotype", "grp")], show_rownames = FALSE)
+
+geneC.dis <- dist(topDat, method = "euclidean")
+
+geneC.hc.a <- hclust(geneC.dis, method = "average")
+
+ggdendrogram(geneC.hc.a, labels = FALSE, main = "Hierarchical with Average Linkage", xlab = "")
+
+#Using pvclust on the top 100 genes
+pvc <- pvclust(topDat, nboot = 100)
+
+#Try plotting
+{pvc %>% as.dendrogram %>% 
+  set("labels", prDes$grp) %>%
+  plot
+pvc %>% text
+pvc %>% pvrect}
+
+```
+

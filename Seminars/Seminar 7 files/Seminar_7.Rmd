@@ -1,0 +1,222 @@
+---
+title: "Seminar 7"
+author: "Abdullah Farouk"
+date: '2018-03-03'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# source('http://bioconductor.org/biocLite.R')
+# biocLite('GEOquery')
+# biocLite('wateRmelon')
+# biocLite("IlluminaHumanMethylation450k.db")
+# biocLite("FDb.InfiniumMethylation.hg19")
+library(GEOquery)
+library(wateRmelon)
+library(FDb.InfiniumMethylation.hg19)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+load("/Users/abdullah/Downloads/methyl_ALL.Rdata")
+
+ # save the data to avoid future re-downloading
+ # save(ALL.dat, CTRL.dat, ALL.meta, CTRL.meta, file = "methyl_ALL.Rdata")
+
+# density plot
+library(ggplot2)
+dat.probeMeans <- c(rowMeans(ALL.dat, na.rm = T), rowMeans(CTRL.dat, na.rm = T)) 
+plotDat <- data.frame(Beta = dat.probeMeans,
+                      Dataset = rep(c('ALL', 'CTRL'), each = nrow(ALL.dat)))
+(probeAvg <- ggplot(data = plotDat, aes(x = Beta, col = Dataset)) +
+   geom_density() + 
+   ggtitle("Average Beta value density of two experiments") + 
+   xlab("Beta") + 
+   ylab("Density") + 
+   theme_bw()
+)
+
+```
+
+
+```{r}
+# combine data from two experiments into one matrix, each column represents beta
+# values of one sample
+beta.matrix <- as.matrix(cbind(ALL.dat, CTRL.dat))
+str(beta.matrix, max.level = 0)
+
+# quantile normalization
+system.time(beta.norm <- betaqn(beta.matrix))
+
+dat.probeMeans <- c(rowMeans(beta.norm[, 1:ncol(ALL.dat)], na.rm = TRUE),
+                    rowMeans(beta.norm[, ncol(ALL.dat):ncol(beta.norm)], na.rm = TRUE)) 
+plotNorm <-
+  rbind(data.frame(plotDat, Norm = "Before"),
+        data.frame(Beta = dat.probeMeans,
+                   Dataset = rep(c('ALL', 'CTRL'), each = nrow(ALL.dat)),
+                   Norm = "After"))
+plotNorm$Norm <- factor(plotNorm$Norm, levels = c("Before", "After"))
+(probeAvgNorm <- ggplot(data = plotNorm, aes(x = Beta, col = Dataset)) +
+   geom_density() + 
+   facet_grid(Norm ~ .) + 
+   ggtitle("Density of Beta values before and after normalization") + 
+   xlab("Beta") + 
+   ylab("Density") + 
+   theme_bw()
+)
+
+```
+
+```{r}
+#M Values
+M.norm <- beta2m(beta.norm)
+
+#First get annotation data from FDb database  
+InfiniumMethylation <- features(FDb.InfiniumMethylation.hg19)
+
+## We only want annotations for the hg19 genome  
+met <- metadata(FDb.InfiniumMethylation.hg19) ## need to fetch genome
+genome(InfiniumMethylation) <- met[which(met[,'name']=='Genome'),'value']
+
+InfiniumMethylation <- sort(InfiniumMethylation)
+show(InfiniumMethylation)
+```
+
+```{r}
+## Subset to probes that are present in 450k assay  
+probes_450k = as.data.frame(InfiniumMethylation[InfiniumMethylation$platform %in% c("BOTH","HM450"),])
+probes_450k$Probe_ID = rownames(probes_450k)
+cginame_onlycg = probes_450k[probes_450k$probeType == "cg", ]
+
+hm450 <-  getPlatform(platform='HM450', genome='hg19')
+
+probe_UCSC_name = getNearestGene(hm450)
+
+#Restrict our own dataset to probes within CGIs  
+beta.inCGI <- beta.norm[rownames(beta.norm) %in% rownames(probe_UCSC_name),]
+M.inCGI <- M.norm[rownames(M.norm) %in% rownames(probe_UCSC_name),]
+cginame = probe_UCSC_name[rownames(M.inCGI),]
+cginame$cginame = cginame$nearestGeneSymbol
+cginame$Probe_ID = rownames(cginame)
+nrow(M.inCGI)
+
+```
+
+
+```{r}
+## What is the cginame characteristic in the updated data source?? 
+# aggregate probes to CGIs
+beta.CGI <- aggregate(beta.inCGI, by = list(cginame$nearestGeneSymbol), mean, na.rm = T)
+rownames(beta.CGI) <- beta.CGI[, "Group.1"]
+beta.CGI <- subset(beta.CGI, select = - Group.1)
+str(beta.CGI, max.level = 0)
+
+M.CGI <- aggregate(M.inCGI, by = list(cginame$nearestGeneSymbol), mean, na.rm = T)
+rownames(M.CGI) <- M.CGI[, "Group.1"]
+M.CGI <- subset(M.CGI, select = - Group.1)
+str(M.CGI, max.level = 0)
+
+```
+
+```{r}
+# check the distribution of CGI M values with boxplot
+library(reshape2)
+M.CGI.tall <- melt(t(M.CGI), value.name = 'M', varnames = c('Sample', 'CGI'))
+M.CGI.tall$Group <- gsub("_[0-9]+", "", M.CGI.tall$Sample)
+(M.boxplot <- ggplot(data = M.CGI.tall, aes(Sample, M, fill = factor(Group))) + 
+   geom_boxplot() + 
+   ggtitle("Distribution of CGI M values") + 
+   xlab("Samples") + 
+   ylab("M values") + 
+   theme_bw() + 
+   scale_x_discrete(labels = NULL))
+```
+
+```{r}
+library(limma)
+design <-
+  data.frame(Group = relevel(factor(gsub("_[0-9]+", "", colnames(M.CGI))),
+                             ref = "HBC"), row.names = colnames(M.CGI))
+str(design)
+
+(DesMat <- model.matrix(~ Group, design))
+
+DMRfit <- lmFit(M.CGI, DesMat)
+DMRfitEb <- eBayes(DMRfit)
+cutoff <- 0.01
+DMR <- topTable(DMRfitEb, coef = 'GroupALL', number = Inf, p.value = cutoff)
+head(DMR)   # top hits 
+
+```
+
+
+```{r}
+library(gplots)
+DMR100 <- topTable(DMRfitEb, coef = 'GroupALL', number = 100)
+DMR.CGI <- t(as.matrix(subset(beta.CGI,
+                              rownames(beta.CGI) %in% rownames(DMR100))))
+str(DMR.CGI, max.level = 0)
+
+col <- c(rep("darkgoldenrod1", times = nrow(DMR.CGI))) 
+col[grepl("HBC", rownames(DMR.CGI))] <- "forestgreen"
+op <- par(mai = rep(0.5, 4))
+heatmap.2(DMR.CGI, col = redblue(256), RowSideColors = col,
+          density.info = "none", trace = "none", Rowv = TRUE, Colv = TRUE,
+          labCol = FALSE, labRow = FALSE, dendrogram="row",
+          margins = c(1, 5))
+legend("topright", c("ALL", "HBC"),
+       col = c("darkgoldenrod1", "forestgreen"), pch = 15)
+```
+
+
+```{r}
+DMR5 <- topTable(DMRfitEb, coef = 'GroupALL', number = 5)
+beta.DMR5probe <-
+  beta.inCGI[cginame[rownames(beta.inCGI),]$cginame %in% rownames(DMR5),]
+beta.DMR5probe.tall <-
+  melt(beta.DMR5probe, value.name = 'M', varnames = c('Probe_ID', 'Sample'))
+beta.DMR5probe.tall$Group <-
+  factor(gsub("_[0-9]+", "", beta.DMR5probe.tall$Sample))
+beta.DMR5probe.tall$CGI <-
+  factor(cginame[as.character(beta.DMR5probe.tall$Probe_ID),]$cginame)
+(beta.DMR5.stripplot <-
+   ggplot(data = beta.DMR5probe.tall, aes(x = Group, y = M, color = Group)) + 
+   geom_point(position = position_jitter(width = 0.05), na.rm = T) + 
+   stat_summary(fun.y = mean, aes(group = 1), geom = "line", color = "black") + 
+   facet_grid(. ~ CGI) + 
+   ggtitle("Probe beta values within top 5 DM CGIs") + 
+   xlab("Group") + 
+   ylab("beta") + 
+   theme_bw())
+```
+
+
+```{r}
+chrlen = as.data.frame(seqinfo.hg19)
+chrlen$chr = as.character(rownames(chrlen))
+chrlen = chrlen[chrlen$chr %in% c("chrX",paste("chr",1:22,sep="")),]
+chr <- probes_450k[,c("seqnames","start","Probe_ID")]; colnames(chr) = c("chr","coord","Probe_ID")
+coord_big = merge(chr, chrlen, by="chr"); rownames(coord_big) = coord_big$Probe_ID
+coord = coord_big[,c("chr","coord")]
+# coordinates of probes in DM CGIs
+coordDMRprobe <- droplevels(na.omit(coord[cginame[cginame$cginame %in% rownames(DMR),]$Probe_ID,])) 
+coordDMRprobe$chr <- as.character(coordDMRprobe$chr)
+(coord.plot <- ggplot(data = coordDMRprobe) + 
+   geom_linerange(aes(x=chr, ymin = 0, ymax = seqlengths), data = chrlen, alpha = 0.5) + 
+   geom_point(aes(x = chr, y = coord),
+              position = position_jitter(width = 0.03), na.rm = T) + 
+   ggtitle("DMR positions on chromosomes") + 
+   ylab("Position of DMRs") +
+   xlab("chr") +
+   coord_flip() + 
+   theme_bw())
+```
+
+## Linear Model Assumptions Violated
+- Imperfect conversion of beta values into a continous variable. Further this variable is bounded between 0 and 1 where as in a linear model it is bounded between negative and positive infinity.
+
+- Pooling of the M values. Could lead to over/underestimation of standard deviations of methylation sites. This would result in incorrect p values and there false significant differences. 

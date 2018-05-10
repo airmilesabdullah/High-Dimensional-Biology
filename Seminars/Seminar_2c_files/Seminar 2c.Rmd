@@ -1,0 +1,44 @@
+---
+title: "Seminar 2c"
+author: "Abdullah Farouk"
+date: '2018-01-17'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Central Limit Theorem
+```{r}
+#Load packages
+library(dplyr)
+library(tidyverse)
+
+set.seed(1) #Set seed for reproducibility
+
+#Set sample size and number of samples to sample over
+sampleSize <- 5
+numSamples <- 1000
+
+#Draw samples from a chi square distribution
+degreeFreedom <- 1
+randomChiSqValues <- rchisq(n = numSamples * sampleSize, df = degreeFreedom)
+
+#Plot the distribution of sample points in randomChiSqValues
+tibble(x = randomChiSqValues) %>% 
+  ggplot() + 
+  geom_density(aes(x = x), color = "red")
+
+# organize the random values into 1000 sample rows of size n = 5 columns
+samples <- matrix(randomChiSqValues, nrow = numSamples, ncol = sampleSize)
+sampleMeans <- rowMeans(samples) # Calculate sample means 
+
+#Plot of the sample means
+tibble(x = sampleMeans) %>% 
+  ggplot() + 
+  geom_line(aes(x = x), stat = "density", color = "green") +
+  geom_point(aes(x = x, y = 0), color = "yellow", shape = 9, size = 3)
+?points
+```
+
