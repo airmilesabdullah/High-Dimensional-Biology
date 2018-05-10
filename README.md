@@ -12,7 +12,7 @@ You can learn more about the work I have done in this course throughout the seme
 Folder Name | Description | Link
 :------------ | :------------------------ | :----------------------------------:
 Assignments | This folder contains my assignments for the semester. | [Click here](https://github.com/navysealtf9k/High-Dimensional-Biology/tree/master/Assignments)
-Paper Review | This folder contains my concise review of the paper on 'Gene Expression By Mouse Inner Ear Cells during Development' | [Click here](https://github.com/navysealtf9k/High-Dimensional-Biology/tree/master/Paper_Review.Rmd)
+Paper Review | This folder contains my concise review of the paper on 'Gene Expression By Mouse Inner Ear Cells during Development' | [Click here](https://github.com/navysealtf9k/High-Dimensional-Biology/tree/master/Paper_Review.md)
 Project | This folder contains a link to my [induvidual report](https://github.com/STAT540-UBC/zz_farouk-abdullah_STAT540_2018/blob/master/Project/Abdullah_Farouk_report.md) and my team's (Gen-X) project [README](https://github.com/navysealtf9k/High-Dimensional-Biology/blob/master/Project/README.md). | [Click here](https://github.com/navysealtf9k/High-Dimensional-Biology/tree/master/Project)
 Seminars | This folder contains my deliverables for each of the 10 seminars conducted throughout the semester. | [Click here](https://github.com/navysealtf9k/High-Dimensional-Biology/tree/master/Seminars)
 
