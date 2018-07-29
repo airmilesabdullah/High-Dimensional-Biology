@@ -1,6 +1,6 @@
 # WELCOME
 
-This is a link to the repository of team GenX. It contains the work of a group of STAT 540 students on a project titled **Differential methylation analysis of preeclamptic placental tissue using the Illumina HumanMethylation450K array** [click here to check out our poster on it :)](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Documents/GenX_poster.pdf)
+This is the repository of team GenX. It contains the work of a group of STAT 540 students on a project titled the **Differential methylation analysis of preeclamptic placental tissue using the Illumina HumanMethylation450K array** [click here to check out our poster on it :)](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Documents/GenX_poster.pdf)
 
 # Project Goals, Challenges and Findings
 
@@ -15,16 +15,14 @@ The links below will provide readers with a description of our aims, our initial
 
 # Work Flow Diagram
 
-The flowchart below provides a summary of the different analyses carried out in our project. The black arrow corresponds to the sequence in which they were undertaken. The coloured arrows show which script was used in each part;
-
-
+The flowchart below provides a summary of the different analyses carried out in our project. The black arrow corresponds to the sequence in which they were undertaken. The red arrows show which script was used in each part;
 
 
 ![Flowchart](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Untitled%20Diagram.png)
 
 
 # REPO Contents
-This repository contains three folders. They are:
+This repo contains three folders. They are:
 
 Folder Name | Description | Link
 :------------ | :------------------------ | :----------------------------------:
