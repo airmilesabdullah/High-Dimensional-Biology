@@ -1,0 +1,19 @@
+--- 
+title: "README"
+output: github_document
+---
+
+This folder is our codebase. It contains the different scripts used during different stages in our analysis. Please find a brief description of each script and a corresponding link to them in the table below:
+
+## Table of Contents
+
+Script Name | Description | Link
+:------------ | :------------------------ | :----------------------------------:
+pre_processing_data.Rmd | This script details how we cleaned, computed beta and M values and merged the two GEO datasets used in this study. | [Click here](pre_processing_data.md)
+exploratory_and_limma_analyses.md | This script builds on the pre processing script. It contains the code used to aggregate CpG probes to CpG Islands. <br/><br/> It also details the exploratory data analysis procedures undertaken to familiarize ourselves with the data at hand and the initial steps of our analysis (e.g.identifying the top differentially methylated cites ) | [Click here](exploratory_and_limma_analyses.md)
+Machine_Learning_Methods.Rmd | This script describes the different supervised learning models tested to classify placental cells by disease status using CpG Islands as covariates. <br/><br/> It also highlights the cross validation techniques used to train, tune and choose the best performing model. | [Click here](Machine_Learning_Methods.Rmd)
+GO_analysis.md | This script details the association of CGI sites to genes to then protiens which were ultimately used to identify a particular biological function. | [Click here](GO_analysis.md)
+m_value_normality_check.md | This script verifies the normality of the m values used as the response variable in the linear regression model fit to identiy the top differentially methylated CpG Islands.  | [Click here](m_value_normality_check.md)
+test_data_set_creation.md | This script details the procedures used to clean and normalize a publicly available methylation dataset on preeclempsia (GSE73375). <br/><br/> The test set was to be used to asses the generalizability of our chosen classification model | [Click here](test_data_set_creation.md)
+
+

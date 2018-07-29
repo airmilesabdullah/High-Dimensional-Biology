@@ -1,0 +1,22 @@
+---
+title: "README"
+output: github_document
+---
+
+This folder contains the data used in our analysis, as well as data objects created and saved after key analysis steps. Please find in the table below a brief description of each object stored in this folder, and link corresponding to each:
+
+## Table of Contents
+
+Script Name | Description | Link
+:------------ | :------------------------ | :----------------------------------:
+Beta_CGI_data.RDS | This object contains the unnormalized beta values for all CGIs in the 85 samples used in our analyses. | [Click here](Beta_CGI_data.RDS)
+CGI_SL_Set.rdata | This object contains the names of the CpG island sites selected by CV limma. | [Click here](CGI_SL_Set.rdata)
+GO.xml | This file contains the latest GO terms, and was used in the gene ontology analysis. | [Click here](GO.xml)
+M_CGI_data.RDS | This object contains the normalized M values corresponding to all 19,394 CGI sites analyzed in our 85 samples. | [Click here](M_CGI_data.RDS)
+Test_Set_Metadata.RDS | This object contains the metadata for the 36 samples from GSE73375 that we were intending to use to test our trained machine learning approach (disease class with levels "normal" and "preeclampsia", and gestational age with levels "preterm" and "term"). | [Click here](Test_Set_Metadata.RDS)
+m_val_test_set.rds | This object contains the M values corresponding to each of the 36 samples from GSE73375, the dataset we intended to test our SVM approach with. | [Click here](m_val_test_set.RDS)
+meta_data.csv | This object contains the metadata for the 85 samples used in our analyses, and contains a disease class column with 2 levels: "normal" and "preeclampsia", and a gestational age column with 2 levels: "term" and "preterm", as well as sample identifiers. | [Click here](meta_data.csv)
+norm_m_values_test_set.rds | This object contains the normalized M values for the 36 samples from GSE73375. | [Click here](norm_m_values_test_set.rds)
+unnorm_m_val_test_set.rds | This object contains the unnormalized M values for the 36 samples from GSE73376. | [Click here](unnorm_m_val_test_set.rds)
+
+

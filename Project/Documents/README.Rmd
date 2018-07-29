@@ -1,0 +1,15 @@
+---
+title: "README"
+output: github_document
+---
+
+This folder contains reports that detail our aims, our progress and our final results and conclusions.Please find a brief description of each document and a corresponding link to them in the table below:
+
+
+## Table of Contents
+
+Document Name | Description | Link
+:------------ | :------------------------ | :----------------------------------:
+Proposal.md | This document outlines our goals for this course. It provides a description of our core objectives, the datasets that are used and the division of labor amongst the different group members. | [Click here](Proposal.md)
+Progress_Report.md | This document describes the progress we made in our project by the midway mark. We outline the challenges faced and subsequent revisions made to our objectives thereafter. | [Click here](Progress_Report.md)
+Technical_Report.md | This document provides an explanation of the different steps in our analysis. It is complimentary to the poster made to highlight the methods used and our findings in this project. | [Click here](Technical_Report.md)

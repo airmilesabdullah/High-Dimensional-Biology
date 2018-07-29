@@ -1,0 +1,71 @@
+---
+title: "GO_Analysis"
+author: "Amy"
+date: '2018-03-29'
+output: github_document
+---
+
+#### This code contains the gene ontology analysis of the 87 differentially methylated CpG islands that were discovered using limma. 
+This geneset analysis was completed using ErmineJ package for R, ermineR. The input list of genes is 87 genes associated with the 87 CGI's identified to be differentially methylated at an FDR < 0.01 in our linear modelling analyses. The scores in the geneset enrichment analysis of these genes are their corresponding adjusted P values. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(tibble)
+library(reshape2)
+library(devtools)
+library(ermineR)
+library(knitr)
+```
+
+```{r loading gene list}
+geneList <- read.csv("/Users/Amy/Desktop/STAT540/GO_Analysis/Top_DM_CGIs.csv")
+kable(head(geneList))
+
+colnames(geneList)
+```
+
+```{r formatting the input gene list}
+
+# download GO.xml file
+if (!file.exists("GO.xml")) { goToday("GO.xml") }
+
+geneList_subset <- geneList[, c("X", "adj.P.Val")]
+geneList_subset$adj.P.Val <- as.numeric(geneList_subset$adj.P.Val)
+geneScores <- geneList_subset
+
+
+geneScores <- 
+  geneScores %>% 
+  arrange(adj.P.Val) %>%
+  column_to_rownames("X")
+
+head(geneScores) # arranged by ascending FDR - confirmed
+
+```
+
+
+
+The process involving the most differentially methylated CGIs from our list is "biological regulation" - could relate to improper regulation of many processes related to the pathology of preeclampsia (PE); also "biosynthetic process" is a repeating term, nitric oxide is a vasodilator that is synthesized in vivo  and implicated in PE, it has been demonstrated in the literature that decreased rates of nitric oxide biosynthesis contribute to the pathology of PE, see [Seligman et al. 1994](https://www.ncbi.nlm.nih.gov/pubmed/7943106).
+
+```{r enrichment analysis}
+
+goResult <- precRecall(scores = geneScores, 
+                               scoreColumn = 1,  
+                               bigIsBetter = FALSE, # FDR scores
+                               annotation = "Generic_human", 
+                               aspects = "B", # biological processes
+                               iterations = 10000,
+                               geneSetDescription = "GO.xml") 
+
+goResult$results %>% 
+  arrange(MFPvalue) %>%
+  as.data.frame() %>%
+  kable()
+  
+
+```
+
+
+

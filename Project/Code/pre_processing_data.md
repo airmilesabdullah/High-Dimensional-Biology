@@ -1,0 +1,261 @@
+Pre processing
+================
+Abdullah Farouk
+2018-03-13
+
+Data Preprocessing
+==================
+
+This markdown document contains the following contents:
+
+-   Reading in the two methylation datasets to be used
+-   Reading in supplementary files (sample meta data and hybridization data)
+-   Initial cleaning of the data
+-   Computation of beta values
+-   Additional cleaning (Filtering out probes along sex chromosomes)
+-   Merging the two datasets together
+-   Data Normalization
+
+Load libraries
+==============
+
+``` r
+library(knitr)
+library(GEOquery)
+library(biomaRt)
+library(tidyverse)
+library(data.table)
+library(wateRmelon)
+```
+
+Read data in
+============
+
+In this section we read in txt files downloaded onto a local terminal. They are publicly available GEO datasets (GSE44667 & GSE57767) that relate to Preeclempsia. Due to their large size(240 MB and 438MB repectively) we could not upload them to GitHub and therefore read them in via relative links.
+
+``` r
+# Reading in raw signal intensity file for GSE446677 & GSE57767 dataset
+GSE446677 <- read.delim("/Users/abdullah/Desktop/ProjectData/GSE44667_signals.txt",fill = TRUE, header = TRUE)
+
+GSE57767 <- read.delim("/Users/abdullah/Desktop/ProjectData/GSE57767_signal_intensities.txt",fill = TRUE, header = TRUE)
+```
+
+Read meta data and cross reactive data in
+=========================================
+
+In this section we read in supplementary files that we make use of later on to clean our datasets. The first file read in is the metadata containing Illumina array probe annotations. Note that this is not the design matrix, and therefore contains no experimental design information. This .csv file contains probe information that is not specific to this experiment, and applies to any 450k experiment.
+
+Next we read in the hybridization dataset. The main purpose of this dataset are to remove probes annotated by Price et al. 2013, as being non-specific to their annealing locus. A more throrough explanation behind our decision to remove them is provided later on.
+
+``` r
+sample_meta_data <- read.csv("/Users/abdullah/Desktop/ProjectData/GPL13534_HumanMethylation450_15017482_v.1.1.csv", header = TRUE)
+
+colnames(sample_meta_data)[1] <- "TargetID"
+
+#loading hybridization data
+Crossreactive_Magda <- read.csv("/Users/abdullah/Desktop/ProjectData/450KMagdaAnnotation.csv",fill = TRUE, header = TRUE)
+```
+
+Eliminate probes with large detection p values
+==============================================
+
+We elminate probes in both datasets with a large detection p value as these probes fluorescence cannot be confidently differentiated from the background signal.
+
+``` r
+#selecting columns only with p-value
+pval_test <- dplyr::select(GSE446677, ends_with(".Pval"))
+
+rownames(pval_test) <- GSE446677[,1]
+
+#find the largest p value accross all samples and store it in the orgininal dataset
+GSE446677_pval <- GSE446677
+
+GSE446677_pval$max.Pval <- apply(pval_test,1,max)
+
+#filter out the dataset with the largest p-value > 0.05
+GSE446677_pfiltered <- filter(GSE446677_pval, max.Pval < 0.05)
+
+#Repeat for the second dataset
+#selecting columns only with p-value
+pval_test_1 <- dplyr::select(GSE57767, ends_with(".Pval"))
+
+rownames(pval_test_1) <- GSE57767[,1]
+
+#find the largest p value accross all samples and store it in the orgininal dataset
+GSE57767_pval <- GSE57767
+
+GSE57767_pval$max.Pval <- apply(pval_test_1,1,max)
+
+#filter out the dataset with the largest p-value > 0.05
+GSE57767_pfiltered <- filter(GSE57767_pval, max.Pval < 0.05)
+```
+
+Calculate Beta Values
+=====================
+
+We use the formula seen in class to convert data on methylation and unmethylation for a given probe into beta values. This allows us to perform statistical tests easily. For each probe, it is computed as:
+
+$Beta\_{\\text{probe}} = \\frac{methylation \\ value\_{\\text{probe}}}{methylation value\_{\\text{probe}} + unmethylation \\ value\_{\\text{probe}}}$
+
+``` r
+#Calulate Beta Values
+GSE446677_Bval <- GSE446677_pfiltered
+
+#Initialize for loop
+x_1 <- 1     #Column to iterate over
+y_1 <- 123   #New column to add to GSE446677_pfiltered dataset
+j <- 1       #Number of samples in dataset
+
+for(j in 1:40){
+  
+  d <- GSE446677_pfiltered[ ,x_1+1] + GSE446677_pfiltered[ ,x_1+2]
+  
+  GSE446677_Bval[ ,y_1] <- GSE446677_pfiltered[ ,x_1+2]/d
+  
+  x_1 = x_1 + 3
+  
+  j = j + 1
+  
+  y_1 = y_1 + 1
+  
+}
+
+#Keep columns with beta values
+GSE446677_Bval <- GSE446677_Bval[ ,123:162]
+
+
+#Repeat for the GSE57767 dataset
+GSE57767_Bval <- GSE57767_pfiltered
+
+#Initialize for loop
+x_2 <- 1     #Column to iterate over
+y_2 <- 138   #New column to add to GSE446677_pfiltered dataset
+j_1 <- 1     #Number of samples in dataset
+
+for(j_1 in 1:45){
+  
+  d <- GSE57767_pfiltered[ ,x_2+1] + GSE57767_pfiltered[ ,x_2+2]
+  
+  GSE57767_Bval[, y_2] <- GSE57767_pfiltered[ ,x_2+2]/d
+  
+  x_2 = x_2 + 3
+  
+  j_1 = j_1 + 1
+  
+  y_2 = y_2 + 1
+
+}
+
+#Keep columns with beta values
+GSE57767_Bval <- GSE57767_Bval[ ,138:182]
+```
+
+Name columns and rows of newly created objects
+==============================================
+
+Here we label the columns and rows of the object we created to store our beta values for each dataset in.
+
+``` r
+# Add colnames and rownames
+col_names_GSE446677 <- c("PM12v5", "PM15v1v3", "PM21v1v2", "PM39v2v3", "PM43v1v2", "PM51v1v2", "PM86v1v2", "PM97v1v2", "PM116v1v2", "PM129v1v2", "PM67", "PL131", "PM80", "PM36",  "PM6", "PM99", "PM49", "PL130", "PM64", "PM138", "PL112", "PL11v2v3", 
+"PL25v1v2", "PL26v1v2", "PL33v1v2", "PL56v1v2", "PL64v1v2", "PL65v1v2", "PL76v1v2", "PL96v1v2", "PL113v1v2", "PL104", "PL38", "PL59", "PL32", "PL43", "PL58", "PM87", "PL102", "PL21" )
+
+#For Beta values object
+colnames(GSE446677_Bval) <- col_names_GSE446677
+
+rownames(GSE446677_Bval) <- GSE446677_pfiltered[ ,1]
+
+
+#Repeat for GSE57767
+col_names_GSE57767 <- c("X4001", "X4002", "X4003", "X4006", "X4007", "X4011", "X4015", "X4018", "X4023", "X4024", "X4027", "X4028", "X4029", "X4031", "X2000", "X2001", "X2002", "X2004", "X2005", "X2006", "X2007", "X2008", "X2009", "X2012", "X2013", "X2014", "X2016", "X2017", "X2019", "X2020", "X2025", "X2026", "X2028", "X2029", "X2030", "X2034", "X2039", "X2042", "X2043", "X2047", "X2048","X2049", "X2052", "X2055", "X2063")
+
+#For Beta values object
+colnames(GSE57767_Bval) <- col_names_GSE57767
+
+rownames(GSE57767_Bval) <- GSE57767_pfiltered[ ,1]
+```
+
+Filter out data from X and Y chromosome and QC SNP probe
+========================================================
+
+Probes along the sex chromosomes are removed here
+
+``` r
+samples_filt <- sample_meta_data[!sample_meta_data$CHR%in%c("X", "Y"), ]
+ 
+samples_filt <- samples_filt[grep("^rs", samples_filt$TargetID, invert = TRUE), ]
+```
+
+Filter out cross hybridization probes
+=====================================
+
+It is based on an in-silico prediction; for the 450K annotation, we have no empirical evidence that XY and autosomal cross-reactive probes are actually cross-hybridizing. So in both cases (auto & XY) we are making a cost vs. benefit decision - is it worth the possibility of including a probe that MIGHT be hybridized to multiple locations?
+
+The cost is a lot higher for XY probes because of the difference in DNAm between the active and inactive X chromosome and because of (usually) different numbers of males and females in study groups. Thus these are more likely to result in false discoveries. For autosomal non-specific probes that actually do cross hybridize, there should be no bias between groups, so they are less likely to result in false positive discoveries, but for sake of correctness, we have erred on the side of caution and chosen to remove them.
+
+``` r
+Crossreactive_MagdaDatXY <- Crossreactive_Magda[grep("YES",Crossreactive_Magda$XY_Hits), ]
+
+Crossreactive_MagdaDatAuto <- Crossreactive_Magda[grep("YES",Crossreactive_Magda$Autosomal_Hits), ]
+
+Cross_MagdaXY <-samples_filt[which((samples_filt$TargetID) %in% (Crossreactive_MagdaDatXY$IlmnID)), ]
+
+Cross_MagdaAuto <-samples_filt[which((samples_filt$TargetID) %in% (Crossreactive_MagdaDatAuto$IlmnID)), ]
+
+samples_filt <- samples_filt[!(samples_filt$TargetID) %in% (Crossreactive_MagdaDatXY$IlmnID), ]
+
+samples_filt <- samples_filt[!(samples_filt$TargetID) %in% (Crossreactive_MagdaDatAuto$IlmnID), ]
+```
+
+Combining filtered annotation data with B and M-value data
+==========================================================
+
+In this step we combine the two objects of beta values for the different datasets studied into one object. This allows us to normalize the values across the two datasets in an identical manner.
+
+``` r
+Filtered_GSE446677_Bval <- GSE446677_Bval[which(rownames(GSE446677_Bval) %in% (samples_filt$TargetID)), ]
+
+Filtered_GSE57767_Bval <- GSE57767_Bval[which(rownames(GSE57767_Bval) %in% (samples_filt$TargetID)), ]
+```
+
+Merge them together
+===================
+
+A continuation of the steps above
+
+``` r
+r1 <- rownames(Filtered_GSE446677_Bval)
+
+r2 <- rownames(Filtered_GSE57767_Bval)
+
+#Same probes in each dataset
+same_probe <- r1[which(r1 %in% r2)] #%in% tells you which items from the left hand side are also in the right hand side.
+
+#Keep rows with only the same probe values
+GSE446677_Bval_to_merge <- Filtered_GSE446677_Bval[same_probe, ]
+
+GSE57767_Bval_to_merge <- Filtered_GSE57767_Bval[same_probe, ]
+
+#Create matrices for beta and m values
+beta_matrix <- as.matrix(cbind(GSE446677_Bval_to_merge, GSE57767_Bval_to_merge))
+```
+
+Quantile Normalization
+======================
+
+We use the betaqn function from the wateRmelon package to quantile normalize the beta values in our newly created beta matrix object (consists of beta values from both datasets combined together).
+
+``` r
+beta_norm <- betaqn(beta_matrix)
+m_norm <- beta2m(beta_norm)
+```
+
+Save the data to avoid future re-downloading
+============================================
+
+We save the data in RDS form to - Avoid having to re run code to obtain our desired objects of interest. - Loads quicker when called on in other parts of our analytical pipeline.
+
+``` r
+#Saving normalized data seperately
+#saveRDS(beta_matrix, beta_norm, m_norm, file = "normalized_data.rds")
+```
