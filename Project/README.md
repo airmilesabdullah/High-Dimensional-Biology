@@ -18,7 +18,7 @@ The links below will provide readers with a description of our aims, our initial
 The flowchart below provides a summary of the different analyses carried out in our project. The black arrow corresponds to the sequence in which they were undertaken. The red arrows show which script was used in each part;
 
 
-![Flowchart](https://github.com/STAT540-UBC/Repo_team_GenX/blob/master/Untitled%20Diagram.png)
+![Flowchart](https://github.com/navysealtf9k/High-Dimensional-Biology/edit/master/Project/Untitled%20Diagram.png)
 
 
 # REPO Contents
