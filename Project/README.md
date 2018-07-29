@@ -18,7 +18,7 @@ The links below will provide readers with a description of our aims, our initial
 The flowchart below provides a summary of the different analyses carried out in our project. The black arrow corresponds to the sequence in which they were undertaken. The red arrows show which script was used in each part;
 
 
-![Flowchart](Untitled Diagram.png)
+![Flowchart](Diagram.png)
 
 
 # REPO Contents
